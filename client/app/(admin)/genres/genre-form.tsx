@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,11 +30,20 @@ export default function GenreForm() {
     try {
       // Mengirim POST ke API genres
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      
+      // Ambil token dari cookie
+      const token = Cookies.get('auth_token');
+      if (!token) {
+        setError('Token tidak ditemukan. Silakan login terlebih dahulu.');
+        setIsLoading(false);
+        return;
+      }
+
       const res = await fetch(`${apiBaseUrl}/api/genres`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // TODO: Di sini nanti perlu menambahkan Token Admin untuk Auth
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ name: name.trim() }),
       });
