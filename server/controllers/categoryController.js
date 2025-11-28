@@ -54,10 +54,22 @@ const updateCategory = async (req, res) => {
 // Delete
 const deleteCategory = async (req, res) => {
   const { id } = req.params;
+  const categoryId = parseInt(id);
+  
   try {
-    await prisma.category.delete({
-      where: { id: parseInt(id) },
+    // Use transaction to ensure atomic delete operation
+    await prisma.$transaction(async (tx) => {
+      // Delete all books in this category first (cascade delete)
+      await tx.book.deleteMany({
+        where: { categoryId: categoryId }
+      });
+
+      // Then delete the category
+      await tx.category.delete({
+        where: { id: categoryId }
+      });
     });
+
     res.status(204).send();
   } catch (err) {
     res.status(500).json({ error: err.message });

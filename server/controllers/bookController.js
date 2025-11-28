@@ -1,4 +1,6 @@
 const prisma = require('../lib/prisma');
+const fs = require('fs');
+const path = require('path');
 
 const processBookData = (req) => {
     const { title, author, description, categoryId, genreId } = req.body;
@@ -131,10 +133,62 @@ const updateBook = async (req, res) => {
 // 5. Delete
 const deleteBook = async (req, res) => {
   const { id } = req.params;
+  const bookId = parseInt(id);
+  
   try {
-    // TODO: Hapus file dari folder /uploads sebelum menghapus entry dari DB
-    
-    await prisma.book.delete({ where: { id: parseInt(id) } });
+    // 1. Use transaction to ensure atomic delete operation
+    await prisma.$transaction(async (tx) => {
+      // Fetch the book to get file paths before deleting
+      const book = await tx.book.findUnique({
+        where: { id: bookId }
+      });
+
+      if (!book) {
+        throw new Error('Buku tidak ditemukan');
+      }
+
+      // 2. Delete files from disk if they exist
+      if (book.file_url) {
+        const bookFilePath = path.join(process.cwd(), book.file_url);
+        try {
+          if (fs.existsSync(bookFilePath)) {
+            fs.unlinkSync(bookFilePath);
+            console.log(`Berhasil menghapus file buku: ${bookFilePath}`);
+          }
+        } catch (fileErr) {
+          console.error(`Gagal menghapus file buku: ${fileErr.message}`);
+          // Lanjutkan proses hapus database meskipun file gagal dihapus
+        }
+      }
+
+      if (book.cover_image_url) {
+        const coverFilePath = path.join(process.cwd(), book.cover_image_url);
+        try {
+          if (fs.existsSync(coverFilePath)) {
+            fs.unlinkSync(coverFilePath);
+            console.log(`Berhasil menghapus file cover: ${coverFilePath}`);
+          }
+        } catch (fileErr) {
+          console.error(`Gagal menghapus file cover: ${fileErr.message}`);
+          // Lanjutkan proses hapus database meskipun file gagal dihapus
+        }
+      }
+
+      // 3. Delete related records first (cascade delete) within transaction
+      // Delete all favorites that reference this book
+      await tx.favorite.deleteMany({
+        where: { bookId: bookId }
+      });
+
+      // Delete all reading history that reference this book
+      await tx.readingHistory.deleteMany({
+        where: { bookId: bookId }
+      });
+
+      // 4. Now delete the book from database
+      await tx.book.delete({ where: { id: bookId } });
+    });
+
     res.status(204).send();
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -1,6 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext'; 
 // Asumsi path ke AuthContext sudah benar
 
@@ -18,6 +19,7 @@ interface UserProfile {
 }
 
 const ProfilePage: React.FC = () => {
+  const router = useRouter();
   const { user, logout, api, isHydrated } = useAuth(); // Ambil instance api dan data user dari context
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -209,7 +211,10 @@ const ProfilePage: React.FC = () => {
       {/* Action Buttons */}
       <div className="mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4">
         <button
-          onClick={logout}
+          onClick={() => {
+            logout();
+            router.push('/login');
+          }}
           className="px-6 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg transition duration-200 flex items-center justify-center gap-2"
         >
           <span>🚪</span>

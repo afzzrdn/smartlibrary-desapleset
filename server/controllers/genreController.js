@@ -48,8 +48,22 @@ const updateGenre = async (req, res) => {
 // Delete
 const deleteGenre = async (req, res) => {
   const { id } = req.params;
+  const genreId = parseInt(id);
+  
   try {
-    await prisma.genre.delete({ where: { id: parseInt(id) } });
+    // Use transaction to ensure atomic delete operation
+    await prisma.$transaction(async (tx) => {
+      // Delete all books in this genre first (cascade delete)
+      await tx.book.deleteMany({
+        where: { genreId: genreId }
+      });
+
+      // Then delete the genre
+      await tx.genre.delete({ 
+        where: { id: genreId } 
+      });
+    });
+
     res.status(204).send();
   } catch (err) {
     res.status(500).json({ error: err.message });

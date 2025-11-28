@@ -2,12 +2,20 @@ const prisma = require('../lib/prisma'); // Klien Prisma baru kita
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+// Allowed roles for security
+const ALLOWED_ROLES = ['user', 'admin'];
+
 // === Fungsi Registrasi Pengguna Baru (NEW) ===
 const register = async (req, res) => {
-  const { email, password, role } = req.body;
+  const { email, password, role, name } = req.body;
 
   try {
-    // 1. Cek apakah user sudah ada
+    // 1. Validasi input
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email dan password wajib diisi.' });
+    }
+
+    // 2. Cek apakah user sudah ada
     const existingUser = await prisma.user.findUnique({
       where: { email: email },
     });
@@ -16,32 +24,42 @@ const register = async (req, res) => {
       return res.status(409).json({ message: 'Email sudah terdaftar.' });
     }
 
-    // 2. Enkripsi password
+    // 3. Validasi dan sanitasi role
+    const validatedRole = (role && ALLOWED_ROLES.includes(role)) ? role : 'user';
+    if (role && !ALLOWED_ROLES.includes(role)) {
+      console.warn(`Invalid role attempted in registration: ${role}. Defaulting to 'user'.`);
+    }
+
+    // 4. Enkripsi password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 3. Simpan user baru ke DB (menggantikan INSERT)
+    // 5. Simpan user baru ke DB
     const newUser = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
-        // Role default adalah 'user'. Jika role dikirim, gunakan nilainya.
-        // Hati-hati: Dalam produksi, Anda harus memvalidasi role yang diizinkan.
-        role: role || 'user', 
+        role: validatedRole,
+        name: name || null, // Simpan nama jika ada
       },
     });
 
-    // 4. Buat Token untuk login instan
+    // 6. Buat Token untuk login instan
     const token = jwt.sign(
       { id: newUser.id, email: newUser.email, role: newUser.role },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '7d' } // Token valid 7 hari
     );
 
     res.status(201).json({
       message: 'Registrasi berhasil',
       token: token,
-      user: { id: newUser.id, email: newUser.email, role: newUser.role },
+      user: { 
+        id: newUser.id, 
+        email: newUser.email, 
+        role: newUser.role,
+        name: newUser.name,
+      },
     });
   } catch (err) {
     console.error(err);
@@ -73,13 +91,13 @@ const login = async (req, res) => {
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '7d' } // Token valid 7 hari (konsisten dengan register)
     );
 
     res.json({
       message: 'Login berhasil',
       token: token,
-      user: { id: user.id, email: user.email, role: user.role },
+      user: { id: user.id, email: user.email, role: user.role, name: user.name },
     });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error', details: err.message });
@@ -142,9 +160,89 @@ const getProfile = async (req, res) => {
   }
 };
 
+// === Fungsi Get All Members (ADMIN ONLY) ===
+const getMembers = async (req, res) => {
+  try {
+    const members = await prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        role: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(members);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// === Fungsi Update Member ===
+const updateMember = async (req, res) => {
+  const { id } = req.params;
+  const { name, phone, role } = req.body;
+
+  try {
+    const updatedMember = await prisma.user.update({
+      where: { id: parseInt(id) },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(phone !== undefined && { phone }),
+        ...(role !== undefined && { role }),
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        role: true,
+        createdAt: true,
+        avatar_url: true,
+      },
+    });
+
+    res.json(updatedMember);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// === Fungsi Delete Member ===
+const deleteMember = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Delete all favorites for this user
+    await prisma.favorite.deleteMany({
+      where: { userId: parseInt(id) },
+    });
+
+    // Delete all reading history for this user
+    await prisma.readingHistory.deleteMany({
+      where: { userId: parseInt(id) },
+    });
+
+    // Delete the user
+    await prisma.user.delete({
+      where: { id: parseInt(id) },
+    });
+
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   register,
   login,
   healthCheck,
-  getProfile, // <<< Tambahkan fungsi baru
+  getProfile,
+  getMembers,
+  updateMember,
+  deleteMember,
 };

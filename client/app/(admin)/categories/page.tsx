@@ -8,8 +8,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, Edit2 } from 'lucide-react';
 import CategoryForm from './category-form';
+import CategoryActions from './category-actions';
 
 // Client Component untuk Form (membutuhkan state)
 
@@ -91,10 +92,9 @@ export default async function ManageCategoriesPage() {
                           <TableCell className='text-sm text-gray-600'>{cat.id}</TableCell>
                           <TableCell className="font-medium text-gray-900">{cat.name}</TableCell>
                           <TableCell className="text-right">
-                            <Button variant="destructive" size="sm" className='h-8 px-3 text-xs'>
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              Hapus
-                            </Button>
+                            <div className="flex gap-2 justify-end">
+                              <CategoryActions categoryId={cat.id} categoryName={cat.name} />
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}

@@ -8,10 +8,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2 } from 'lucide-react';
 
 // Client Component untuk Form (membutuhkan state)
 import GenreForm from './genre-form'; // Import komponen form genre
+import GenreActions from './genre-actions'; // Import komponen untuk edit/delete
 
 // --- SERVER COMPONENT: FETCH DATA ---
 async function getGenres() {
@@ -76,10 +76,8 @@ export default async function ManageGenresPage() {
                     <TableRow key={genre.id}>
                       <TableCell className='w-1/12'>{genre.id}</TableCell>
                       <TableCell className="font-medium">{genre.name}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="destructive" size="icon" className='h-8 w-8'>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <TableCell className="text-right flex gap-2 justify-end">
+                        <GenreActions genreId={genre.id} genreName={genre.name} />
                       </TableCell>
                     </TableRow>
                   ))}

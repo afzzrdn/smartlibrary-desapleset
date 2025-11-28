@@ -3,6 +3,7 @@ import Image from "next/image";
 import BookCard from "../components/BookCard";
 import { useSearch } from "./layout";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/app/context/AuthContext";
 import LastReadSection from "../components/LastReadSection";
 
 // Definisikan tipe untuk item yang tersimpan di localStorage
@@ -24,6 +25,7 @@ interface Book {
 
 export default function Home() {
   const { searchTerm } = useSearch();
+  const { isLoggedIn } = useAuth(); // Ambil status login dari AuthContext
   const [lastReadBookIds, setLastReadBookIds] = useState<number[]>([]);
 
   // 1. Ambil ID Buku Terakhir Dibaca dari LocalStorage saat komponen dimuat
@@ -44,8 +46,9 @@ export default function Home() {
     }
   }, []);
 
-  // Tentukan apakah bagian Last Read perlu ditampilkan (hanya jika tidak sedang mencari)
-  const shouldShowLastRead = !searchTerm && lastReadBookIds.length > 0;
+  // Tentukan apakah bagian Last Read perlu ditampilkan
+  // Hanya ditampilkan jika: user sudah login, tidak sedang mencari, dan ada buku yang pernah dibaca
+  const shouldShowLastRead = isLoggedIn && !searchTerm && lastReadBookIds.length > 0;
 
   return (
         <main className="bg-white rounded-b-xl lg:h-[87.5vh] h-auto p-6 lg:p-10 overflow-y-auto">

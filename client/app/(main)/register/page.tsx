@@ -8,38 +8,88 @@ import Cookies from 'js-cookie';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock, Eye, EyeOff, BookOpen, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, BookOpen, ArrowRight, User, CheckCircle } from 'lucide-react';
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('admin@elibrary.com');
-  const [password, setPassword] = useState('admin123');
+export default function RegisterPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
 
-  const handleLogin = async (event: React.FormEvent) => {
+  const validateForm = (): boolean => {
+    // Clear previous errors
+    setError('');
+
+    // Validation checks
+    if (!email.trim()) {
+      setError('Email tidak boleh kosong');
+      return false;
+    }
+
+    if (!email.includes('@')) {
+      setError('Email tidak valid');
+      return false;
+    }
+
+    if (!name.trim()) {
+      setError('Nama tidak boleh kosong');
+      return false;
+    }
+
+    if (password.length < 6) {
+      setError('Password harus minimal 6 karakter');
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Password tidak cocok');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleRegister = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
+    setSuccess('');
+
+    if (!validateForm()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          name: name.trim(),
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || 'Login gagal. Coba lagi.');
+        setError(data.message || 'Registrasi gagal. Coba lagi.');
         setIsLoading(false);
         return;
       }
+
+      // Show success message
+      setSuccess('Registrasi berhasil! Sedang mengarahkan...');
 
       // Simpan token ke cookie
       Cookies.set('auth_token', data.token, { expires: 7 });
@@ -52,8 +102,10 @@ export default function LoginPage() {
       };
       login(data.token, userData);
 
-      // Redirect ke dashboard
-      router.push('/');
+      // Redirect ke home setelah 1.5 detik
+      setTimeout(() => {
+        router.push('/');
+      }, 1500);
     } catch (err) {
       setError('Tidak bisa terhubung ke server. Pastikan server Express berjalan.');
       console.error(err);
@@ -78,20 +130,20 @@ export default function LoginPage() {
               <BookOpen className="w-8 h-8 text-blue-600" />
               <h1 className="text-2xl font-bold text-gray-900">E-Library</h1>
             </div>
-            <p className="text-gray-600 text-sm">Jelajahi koleksi buku digital terlengkap</p>
+            <p className="text-gray-600 text-sm">Bergabunglah dengan jutaan pembaca</p>
           </div>
 
-          {/* Login Card */}
+          {/* Register Card */}
           <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">Masuk</h2>
+              <h2 className="text-3xl font-bold text-gray-900">Daftar</h2>
               <p className="text-gray-600 text-sm mt-2">
-                Belum punya akun?{' '}
+                Sudah punya akun?{' '}
                 <Link
-                  href="/register"
+                  href="/login"
                   className="text-blue-600 font-semibold hover:text-blue-700 transition"
                 >
-                  Daftar di sini
+                  Masuk di sini
                 </Link>
               </p>
             </div>
@@ -118,8 +170,39 @@ export default function LoginPage() {
               </div>
             )}
 
+            {/* Success Message */}
+            {success && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex gap-3">
+                <div className="shrink-0">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-green-800">{success}</p>
+                </div>
+              </div>
+            )}
+
             {/* Form */}
-            <form onSubmit={handleLogin} className="space-y-5">
+            <form onSubmit={handleRegister} className="space-y-4">
+              {/* Name Field */}
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-gray-700 font-medium">
+                  Nama Lengkap
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Nama Anda"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="pl-10 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
               {/* Email Field */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-gray-700 font-medium">
@@ -167,34 +250,75 @@ export default function LoginPage() {
                     )}
                   </button>
                 </div>
+                <p className="text-xs text-gray-500">Minimal 6 karakter</p>
+              </div>
+
+              {/* Confirm Password Field */}
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-gray-700 font-medium">
+                  Konfirmasi Password
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10 pr-10 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={isLoading}
-                className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200 flex items-center justify-center gap-2"
+                disabled={isLoading || success !== ''}
+                className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200 flex items-center justify-center gap-2 mt-6"
               >
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    Sedang masuk...
+                    Sedang mendaftar...
+                  </>
+                ) : success ? (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    Berhasil!
                   </>
                 ) : (
                   <>
-                    Masuk
+                    Daftar
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
               </Button>
             </form>
 
-            {/* Demo Credentials */}
-            <div className="bg-blue-50 rounded-lg p-4 text-sm text-gray-600">
-              <p className="font-semibold text-gray-700 mb-2">📝 Kredensial Demo:</p>
-              <p>Email: <code className="bg-white px-2 py-1 rounded text-xs">admin@elibrary.com</code></p>
-              <p>Password: <code className="bg-white px-2 py-1 rounded text-xs">admin123</code></p>
-            </div>
+            {/* Terms */}
+            <p className="text-center text-xs text-gray-600">
+              Dengan mendaftar, Anda menyetujui{' '}
+              <a href="#" className="text-blue-600 hover:underline">
+                Syarat Layanan
+              </a>{' '}
+              dan{' '}
+              <a href="#" className="text-blue-600 hover:underline">
+                Kebijakan Privasi
+              </a>
+            </p>
           </div>
 
           {/* Footer */}

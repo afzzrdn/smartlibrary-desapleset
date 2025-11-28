@@ -121,13 +121,21 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch, onMenuClick, onFilterClick })
   
   // Logic untuk Logout
   const handleLogout = () => {
-    console.log("Melakukan proses logout user: Menghapus auth_token...");
+    console.log("Melakukan proses logout user: Menghapus auth_token dan localStorage...");
+    
+    // 1. Hapus dari cookies
     deleteAuthCookie("auth_token");
-    // Opsional: Hapus cookie role admin simulasi juga
     deleteAuthCookie("user_role"); 
     
+    // 2. Hapus dari localStorage (PENTING: jangan lupa!)
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user');
+    
+    // 3. Update state lokal
     setIsLoggedIn(false); 
     setIsAdmin(false); 
+    
+    // 4. Redirect ke halaman login
     router.push('/login'); 
   };
   

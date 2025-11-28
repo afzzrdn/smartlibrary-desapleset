@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // --- UTILITY: Hapus Cookie ---
 const deleteAuthCookie = (name: string) => {
@@ -65,11 +65,24 @@ function SidebarNav() {
 function Header() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [isClientReady, setIsClientReady] = useState(false);
+
+  useEffect(() => {
+    setIsClientReady(true);
+  }, []);
 
   const handleLogout = () => {
     console.log("Logging out...");
+    
+    // 1. Hapus dari cookies
     deleteAuthCookie("auth_token");
     deleteAuthCookie("user_role");
+    
+    // 2. Hapus dari localStorage (PENTING!)
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user');
+    
+    // 3. Redirect ke halaman login
     router.push('/login'); 
   };
 
@@ -92,25 +105,29 @@ function Header() {
       {/* User Section */}
       <div className="flex items-center gap-4">
         <p className="text-sm text-gray-600 hidden sm:block">Selamat datang, Admin</p>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Avatar className="h-10 w-10 cursor-pointer border-2 border-gray-200 hover:border-gray-400 transition">
-              <AvatarImage src="/placeholder-user.jpg" alt="Admin" />
-              <AvatarFallback className="bg-gray-900 text-white font-bold">A</AvatarFallback>
-            </Avatar>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">
-              <UserIcon className="mr-2 h-4 w-4" />
-              Profil Saya
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:bg-red-50">
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {isClientReady ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="h-10 w-10 cursor-pointer border-2 border-gray-200 hover:border-gray-400 transition">
+                <AvatarImage src="/placeholder-user.jpg" alt="Admin" />
+                <AvatarFallback className="bg-gray-900 text-white font-bold">A</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">
+                <UserIcon className="mr-2 h-4 w-4" />
+                Profil Saya
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:bg-red-50">
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse" />
+        )}
       </div>
     </header>
   );

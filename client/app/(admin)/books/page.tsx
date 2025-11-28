@@ -9,9 +9,9 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal } from 'lucide-react';
 
-import BookForm from './book-form'; 
+import BookForm from './book-form';
+import BookActions from './book-actions'; 
 
 // --- 1. Fungsi Fetch Buku ---
 async function getBooks() {
@@ -90,10 +90,20 @@ export default async function ManageBooksPage() {
                         <Badge variant="secondary">{book.genre?.name || 'N/A'}</Badge>
                       </TableCell>
                       <TableCell className='text-xs text-blue-500'>{book.file_url}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
+                      <TableCell className="text-right flex gap-2 justify-end">
+                        <BookActions
+                          bookId={book.id}
+                          bookData={{
+                            title: book.title,
+                            author: book.author,
+                            description: book.description,
+                            categoryId: book.categoryId,
+                            genreId: book.genreId,
+                            ISBN: book.ISBN,
+                          }}
+                          categories={categories}
+                          genres={genres}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}

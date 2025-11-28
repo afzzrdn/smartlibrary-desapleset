@@ -115,8 +115,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
+    console.log('Logging out: Clearing cookies, localStorage, and authorization header');
+    
+    // 1. Hapus dari cookies
     Cookies.remove('auth_token');
+    
+    // 2. Hapus dari localStorage
     localStorage.removeItem('user');
+    localStorage.removeItem('auth_token');
+    
+    // 3. Hapus Authorization header dari axios instance
+    delete api.defaults.headers.common['Authorization'];
+    
+    // 4. Reset state
     setToken(null);
     setUser(null);
   };

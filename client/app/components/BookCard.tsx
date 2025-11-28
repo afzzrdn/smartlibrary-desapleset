@@ -99,16 +99,18 @@ const BookCard: React.FC<BookCardProps> = ({ books: initialBooks = [], searchTer
     useEffect(() => {
         const token = getAuthTokenFromCookie();
         setAuthToken(token);
-    }, []); 
+    }, []);
 
     useEffect(() => {
-        if (authToken && !hasFetched && initialBooks.length === 0) {
-            fetchBooks(authToken);
-            setHasFetched(true);
-        }
-        else if (initialBooks.length > 0) {
+        // Jika ada initialBooks dari server, gunakan itu
+        if (initialBooks.length > 0) {
             setAllBooks(initialBooks);
             setDisplayBooks(initialBooks);
+        } 
+        // Jika initialBooks kosong dan belum fetch, fetch dari API
+        else if (!hasFetched) {
+            fetchBooks(authToken); // Bisa null untuk guest users
+            setHasFetched(true);
         }
     }, [authToken, hasFetched, initialBooks]);
 
@@ -197,12 +199,17 @@ const BookCard: React.FC<BookCardProps> = ({ books: initialBooks = [], searchTer
         setDisplayBooks(filtered);
     }, [searchTerm, selectedCategories, selectedGenres, allBooks]);
 
-    const fetchBooks = async (token: string) => {
+    const fetchBooks = async (token: string | undefined) => {
         try {
+            const headers: HeadersInit = {};
+            
+            // Hanya tambahkan Authorization header jika token ada (untuk user yang sudah login)
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/books`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
+                headers,
             }); 
             
             if (!res.ok) {
@@ -486,13 +493,21 @@ const BookCard: React.FC<BookCardProps> = ({ books: initialBooks = [], searchTer
                         <button 
                             onClick={(e) => {
                                 e.stopPropagation(); 
+                                
+                                // Cek apakah user sudah login
+                                if (!authToken) {
+                                    // Jika belum login, redirect ke login page
+                                    router.push('/login');
+                                    return;
+                                }
+                                
                                 // PENTING: Panggil trackLastRead di sini saat tombol Baca Buku diklik
                                 trackLastRead(book.id); 
                                 router.push(`/buku/${book.id}`);
                             }}
                             className="mt-1 text-sm text-white bg-blue-600 w-full py-2 rounded-lg hover:bg-blue-700 transition shadow-md"
                         >
-                            Baca Buku
+                            {authToken ? 'Baca Buku' : 'Login untuk Membaca'}
                         </button>
                     </div>
 

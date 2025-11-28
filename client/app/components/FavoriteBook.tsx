@@ -361,7 +361,7 @@ const FavoriteBookList: React.FC<FavoriteBookListProps> = ({ searchTerm = '' }) 
                 {displayBooks.map((book) => (
                     <div 
                         key={book.id}
-                        className="bg-white shadow-lg rounded-xl transition duration-300 hover:shadow-xl hover:translate-y-[-2px] border border-gray-100"
+                        className="bg-white shadow-lg rounded-xl transition duration-300 hover:shadow-xl hover:-translate-y-0.5 border border-gray-100"
                     >
                         {/* 🖼️ Thumbnail Cover dengan Tombol HAPUS Favorit */}
                         <div className="relative w-full h-[250px] bg-gray-200 rounded-t-xl mb-3 overflow-hidden">
