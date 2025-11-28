@@ -125,13 +125,19 @@ const getProfile = async (req, res) => {
 
   try {
     // Cari user di database berdasarkan ID
-    // Hanya select field yang pasti ada (belum melakukan migration)
+    // Ambil semua field yang ada di User model
     const userProfile = await prisma.user.findUnique({
       where: { id: userId },
       select: { 
         id: true,
         email: true,
         role: true,
+        name: true,
+        phone: true,
+        bio: true,
+        avatar_url: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -139,19 +145,19 @@ const getProfile = async (req, res) => {
       return res.status(404).json({ message: 'Profil pengguna tidak ditemukan' });
     }
 
-    // Return profile dengan default values untuk field yang belum ada
+    // Return profile dengan data lengkap dari database
     res.json({
       message: 'Data profil berhasil diambil',
       user: {
         id: userProfile.id,
         email: userProfile.email,
         role: userProfile.role,
-        name: null,
-        phone: null,
-        bio: null,
-        avatar_url: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        name: userProfile.name,
+        phone: userProfile.phone,
+        bio: userProfile.bio,
+        avatar_url: userProfile.avatar_url,
+        createdAt: userProfile.createdAt,
+        updatedAt: userProfile.updatedAt,
       },
     });
   } catch (err) {
@@ -237,6 +243,27 @@ const deleteMember = async (req, res) => {
   }
 };
 
+// === Fungsi Dashboard Stats (ADMIN ONLY) ===
+const getDashboardStats = async (req, res) => {
+  try {
+    // 1. Total Books
+    const totalBooks = await prisma.book.count();
+
+    // 2. Total Members (non-admin users only)
+    const totalMembers = await prisma.user.count({
+      where: { role: 'user' },
+    });
+
+    res.json({
+      totalBooks,
+      totalMembers,
+    });
+  } catch (err) {
+    console.error('Error in getDashboardStats:', err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -245,4 +272,5 @@ module.exports = {
   getMembers,
   updateMember,
   deleteMember,
+  getDashboardStats,
 };
