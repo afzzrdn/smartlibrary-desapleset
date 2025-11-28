@@ -97,7 +97,7 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <main className="bg-white rounded-xl lg:h-[87.5vh] h-auto p-6 lg:p-10 overflow-y-auto">
+    <main className="bg-white rounded-b-xl lg:h-[87.5vh] h-auto p-6 lg:p-10 overflow-y-auto">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">👤 Profil Pengguna</h1>
@@ -208,19 +208,6 @@ const ProfilePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4">
-        <button
-          onClick={() => {
-            logout();
-            router.push('/login');
-          }}
-          className="px-6 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg transition duration-200 flex items-center justify-center gap-2"
-        >
-          <span>🚪</span>
-          Keluar (Logout)
-        </button>
-      </div>
     </main>
   );
 };

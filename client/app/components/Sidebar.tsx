@@ -1,6 +1,7 @@
 "use client"
 import { useRouter } from 'next/navigation';
 import { FiHome, FiBook, FiHeart, FiX } from 'react-icons/fi'
+import { useAuth } from '@/app/context/AuthContext';
 
 interface SidebarProps {
   onClose?: () => void;
@@ -8,6 +9,7 @@ interface SidebarProps {
 
 const Sidebar = ({ onClose }: SidebarProps) => {
     const router = useRouter();
+    const { isLoggedIn } = useAuth();
   
 
   const goToHome = () => {
@@ -49,21 +51,25 @@ const Sidebar = ({ onClose }: SidebarProps) => {
               <span className="font-medium">Home</span>
             </button>
 
-            <button 
-              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition" 
-              onClick={goToBook}
-            >
-              <FiBook className="text-xl" />
-              <span className="font-medium">Daftar Buku</span>
-            </button>
+            {isLoggedIn && (
+              <button 
+                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition" 
+                onClick={goToBook}
+              >
+                <FiBook className="text-xl" />
+                <span className="font-medium">Daftar Buku</span>
+              </button>
+            )}
 
-            <button 
-              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition" 
-              onClick={goToFavorit}
-            >
-              <FiHeart className="text-xl" />
-              <span className="font-medium">Favorit</span>
-            </button>
+            {isLoggedIn && (
+              <button 
+                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition" 
+                onClick={goToFavorit}
+              >
+                <FiHeart className="text-xl" />
+                <span className="font-medium">Favorit</span>
+              </button>
+            )}
           </nav>
         </div>
       </aside>
