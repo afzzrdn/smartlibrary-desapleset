@@ -1,8 +1,7 @@
 "use client"
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation'; // Import useRouter
-import { Home, Book, Users, PanelLeft, LogOut, User as UserIcon, Heart } from 'lucide-react'; 
-// Asumsi path komponen UI (shadcn/ui) sudah benar
+import { usePathname, useRouter } from 'next/navigation';
+import { Home, Book, Layers, Users, PanelLeft, LogOut, User as UserIcon, Heart, Menu, X } from 'lucide-react'; 
 import { Button } from '@/components/ui/button'; 
 import {
   DropdownMenu,
@@ -13,10 +12,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useState } from 'react';
 
 // --- UTILITY: Hapus Cookie ---
 const deleteAuthCookie = (name: string) => {
-    // Menyetel tanggal kedaluwarsa ke masa lalu untuk menghapus cookie
     document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
 };
 
@@ -26,19 +25,15 @@ function SidebarNav() {
   const navItems = [
     { href: '/dashboard', icon: Home, label: 'Dashboard' },
     { href: '/books', icon: Book, label: 'Kelola Buku' },
-    { href: '/categories', icon: Users, label: 'Kelola Kategori' },
-    { href: '/genres', icon: Users, label: 'Kelola Genre' },
-    { href: '/members', icon: Users, label: 'Kelola Anggota' },
-    { href: '/favorit', icon: Heart, label: 'Favorit Anggota' }, // Contoh rute baru
+    { href: '/categories', icon: Layers, label: 'Kategori' },
+    { href: '/genres', icon: Layers, label: 'Genre' },
+    { href: '/members', icon: Users, label: 'Anggota' },
   ];
 
   return (
-    <nav className="grid items-start gap-2 px-4 text-sm font-medium">
+    <nav className="grid items-start gap-1 px-4 text-sm font-medium">
       {navItems.map((item) => {
-        // Tentukan apakah item ini adalah root rute (seperti /dashboard)
         const isRootRoute = item.href === '/dashboard';
-        
-        // Cek apakah rute aktif, termasuk sub-rute (kecuali dashboard)
         const isActive = 
             isRootRoute 
             ? pathname === item.href 
@@ -49,16 +44,15 @@ function SidebarNav() {
             key={item.href}
             href={item.href}
             className={`
-              flex items-center gap-3 rounded-lg px-3 py-2 transition-all 
-              hover:text-gray-900 hover:bg-gray-100
+              flex items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200
               ${
                 isActive 
-                ? 'text-blue-600 bg-blue-50 font-semibold border border-blue-200' // Styling untuk aktif
-                : 'text-gray-500' 
+                ? 'bg-gray-900 text-white font-semibold' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' 
               }
             `}
           >
-            <item.icon className="h-4 w-4" />
+            <item.icon className="h-5 w-5" />
             {item.label}
           </Link>
         );
@@ -70,92 +64,87 @@ function SidebarNav() {
 // Komponen Header Atas (Topbar)
 function Header() {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
 
-  // Logic untuk Logout
   const handleLogout = () => {
-    console.log("Melakukan proses logout: Menghapus auth_token...");
-    
-    // 1. Hapus cookie otentikasi
+    console.log("Logging out...");
     deleteAuthCookie("auth_token");
-    
-    // 2. Redirect ke halaman login
+    deleteAuthCookie("user_role");
     router.push('/login'); 
   };
 
-  // Logic untuk Profil
   const handleProfile = () => {
-    console.log("Mengarahkan ke halaman profil...");
-    // TODO: Implementasi navigasi ke halaman profil admin jika ada
-    alert("Fitur Profil: Anda akan diarahkan ke halaman profil admin."); 
-    // router.push('/admin/profile');
+    router.push('/profile');
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-white px-6 shadow-sm">
-      {/* Sidebar untuk Mobile (Sheet) */}
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button size="icon" variant="outline" className="sm:hidden">
-            <PanelLeft className="h-5 w-5" />
-            <span className="sr-only">Toggle Menu</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="sm:max-w-xs">
-          <SidebarNav />
-        </SheetContent>
-      </Sheet>
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-white px-4 sm:px-8 shadow-sm">
+      {/* Logo/Title untuk Mobile */}
+      <div className="flex items-center gap-3 sm:hidden">
+        <Link href="/dashboard" className="font-bold text-lg text-gray-900">
+          E-Lib
+        </Link>
+      </div>
 
-      {/* Konten Header (kanan) */}
+      {/* Spacer */}
       <div className="flex-1" />
-      <p className="font-medium text-sm hidden sm:block text-gray-700">Halo, Admin!</p>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Avatar className="h-9 w-9 cursor-pointer border-2 border-gray-200 hover:border-blue-500 transition">
-            <AvatarImage src="/placeholder-user.jpg" alt="Admin Avatar" />
-            <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">A</AvatarFallback>
-          </Avatar>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">
-            <UserIcon className="mr-2 h-4 w-4 text-gray-600" />
-            Profil
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+
+      {/* User Section */}
+      <div className="flex items-center gap-4">
+        <p className="text-sm text-gray-600 hidden sm:block">Selamat datang, Admin</p>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Avatar className="h-10 w-10 cursor-pointer border-2 border-gray-200 hover:border-gray-400 transition">
+              <AvatarImage src="/placeholder-user.jpg" alt="Admin" />
+              <AvatarFallback className="bg-gray-900 text-white font-bold">A</AvatarFallback>
+            </Avatar>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">
+              <UserIcon className="mr-2 h-4 w-4" />
+              Profil Saya
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:bg-red-50">
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </header>
   );
 }
 
-// Layout Utama Admin (Export Default)
+// Layout Utama Admin
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    // Gunakan min-h-screen untuk memastikan layout admin mengambil tinggi penuh
-    <div className="flex min-h-screen w-full flex-col bg-gray-50">
+    <div className="flex min-h-screen w-full bg-gray-50">
       {/* Sidebar untuk Desktop */}
-      <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-white sm:flex shadow-xl"> 
-        <div className="flex h-14 items-center border-b px-6">
-          <Link href="/dashboard" className="font-extrabold text-xl text-blue-600 tracking-wider">
-            E-Library Admin
+      <aside className="hidden sm:flex w-64 flex-col border-r bg-white shadow-lg"> 
+        <div className="flex h-16 items-center border-b px-6">
+          <Link href="/dashboard" className="font-bold text-lg text-gray-900">
+            E-Library
           </Link>
+          <span className="text-xs bg-gray-900 text-white px-2 py-1 rounded ml-auto">Admin</span>
         </div>
-        <div className="flex-1 overflow-y-auto pt-4">
-            <SidebarNav />
+        <div className="flex-1 overflow-y-auto py-6">
+          <SidebarNav />
         </div>
       </aside>
 
-      {/* Konten Utama (Header + Isi Halaman) */}
-      <div className="flex flex-col sm:pl-64 w-full"> 
+      {/* Konten Utama */}
+      <div className="flex flex-col flex-1"> 
         <Header />
-        <main className="flex-1 p-4 sm:p-8">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-8">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );

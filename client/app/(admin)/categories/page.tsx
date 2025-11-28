@@ -35,56 +35,77 @@ export default async function ManageCategoriesPage() {
   try {
     categories = await getCategories();
   } catch (e) {
-    return <h1 className="text-xl text-red-600">ERROR: Gagal memuat data. Pastikan server Express berjalan.</h1>;
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-3xl font-bold">Kelola Kategori</h1>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-600">ERROR: Gagal memuat data kategori. Pastikan server berjalan.</p>
+        </div>
+      </div>
+    );
   }
   
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold">Kelola Kategori</h1>
+    <div className="flex flex-col gap-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Kelola Kategori</h1>
+        <p className="text-gray-600 mt-1">Tambah, edit, dan hapus kategori buku</p>
+      </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         
         {/* Kolom 1: Form untuk Create */}
         <div className="lg:col-span-1">
-          <Card className='sticky top-6'>
-            <CardHeader>
-              <CardTitle>Tambah Kategori Baru</CardTitle>
+          <Card className='sticky top-6 border-0 shadow-md'>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-bold">Tambah Kategori</CardTitle>
             </CardHeader>
             <CardContent>
-              <CategoryForm /> {/* Komponen Form Client */}
+              <CategoryForm />
             </CardContent>
           </Card>
         </div>
 
-        {/* Kolom 2: Tabel untuk Read */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Daftar Kategori ({categories.length})</CardTitle>
+        {/* Kolom 2-4: Tabel untuk Read */}
+        <div className="lg:col-span-3">
+          <Card className="border-0 shadow-md">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-bold">Daftar Kategori</CardTitle>
+              <p className="text-sm text-gray-600 mt-1">Total: {categories.length} kategori</p>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Nama Kategori</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {categories.map((cat: any) => (
-                    <TableRow key={cat.id}>
-                      <TableCell className='w-1/12'>{cat.id}</TableCell>
-                      <TableCell className="font-medium">{cat.name}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="destructive" size="icon" className='h-8 w-8'>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              {categories.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50 border-b">
+                        <TableHead className="font-semibold text-gray-700">ID</TableHead>
+                        <TableHead className="font-semibold text-gray-700">Nama Kategori</TableHead>
+                        <TableHead className="text-right font-semibold text-gray-700">Aksi</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {categories.map((cat: any) => (
+                        <TableRow key={cat.id} className="border-b hover:bg-gray-50">
+                          <TableCell className='text-sm text-gray-600'>{cat.id}</TableCell>
+                          <TableCell className="font-medium text-gray-900">{cat.name}</TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="destructive" size="sm" className='h-8 px-3 text-xs'>
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Hapus
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <p>Belum ada kategori. Silakan tambahkan kategori baru.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
