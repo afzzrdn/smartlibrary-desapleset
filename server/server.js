@@ -6,14 +6,11 @@ const app = express();
 const port = process.env.PORT || 3100;
 
 // ===============================
-// CORS khusus untuk akses lewat jaringan LAN
+// CORS untuk semua jaringan
 // ===============================
 app.use(cors({
-  origin: [
-    "http://localhost:3000",           // akses lokal
-    "http://192.168.1.10:3000",        // ganti dengan IP LAN kamu
-  ],
-  credentials: true,
+  origin: "*",  // Izinkan semua jaringan
+  credentials: false,
 }));
 
 app.use(bodyParser.json());
