@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect, ChangeEvent } from 'react';
-import { Search, User, LogOut, Heart, LayoutDashboard } from 'lucide-react'; 
+import { Search, User, LogOut, Heart, LayoutDashboard, Menu, Filter } from 'lucide-react'; 
 import { useRouter } from 'next/navigation';
 // Asumsi path komponen UI (shadcn/ui) sudah benar
 import {
@@ -71,9 +71,11 @@ const useDebounce = <T extends DebounceValue>(value: T, delay: number): T => {
 
 interface NavbarProps {
   onSearch?: (searchTerm: string) => void;
+  onMenuClick?: () => void;
+  onFilterClick?: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
+const Navbar: React.FC<NavbarProps> = ({ onSearch, onMenuClick, onFilterClick }) => {
   const router = useRouter();
   
   // State untuk nilai input saat ini
@@ -139,24 +141,33 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
 
 
   return (
-    <nav className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+    <nav className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 bg-white gap-2 sm:gap-4">
       
-      {/* Search Input Area */}
-      <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-xl shadow-inner transition duration-200 focus-within:shadow-md focus-within:ring-1 focus-within:ring-blue-400 w-full max-w-lg">
-        <Search className="text-gray-500 text-xl" /> {/* Ikon Pencarian */}
+      {/* Hamburger Menu for Mobile */}
+      <button 
+        onClick={onMenuClick}
+        className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition shrink-0"
+        aria-label="Toggle Sidebar"
+      >
+        <Menu className="text-lg sm:text-xl text-gray-700" />
+      </button>
+      
+      {/* Search Input Area - Responsive */}
+      <div className="flex items-center gap-2 sm:gap-3 bg-gray-50 px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl shadow-inner transition duration-200 focus-within:shadow-md focus-within:ring-1 focus-within:ring-blue-400 flex-1 min-w-0">
+        <Search className="text-gray-500 text-lg sm:text-xl shrink-0" />
         <input
           type="text"
-          placeholder="Cari judul, penulis, atau genre buku..."
+          placeholder="Cari buku..."
           value={searchTerm}
           onChange={handleInputChange}
-          className="outline-none w-full bg-transparent text-gray-800"
+          className="outline-none w-full bg-transparent text-sm sm:text-base text-gray-800 placeholder-gray-400"
         />
         
         {/* Tombol Clear */}
         {searchTerm && (
           <button 
             onClick={() => setSearchTerm('')} 
-            className="text-gray-400 hover:text-gray-600 transition duration-150 text-sm"
+            className="text-gray-400 hover:text-gray-600 transition duration-150 text-sm shrink-0"
             aria-label="Hapus Pencarian"
           >
             &times;
@@ -164,20 +175,29 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
         )}
       </div>
 
+      {/* Filter Button */}
+      <button
+        onClick={onFilterClick}
+        className="p-2 hover:bg-gray-100 rounded-lg transition shrink-0"
+        aria-label="Toggle Filter"
+        title="Filter"
+      >
+        <Filter className="text-lg sm:text-xl text-gray-700" />
+      </button>
+
       {/* User Profile / Auth Area - Render hanya ketika Client Ready */}
-      <div className="relative ml-4">
+      <div className="relative">
         {isClientReady ? (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <div 
-                        className="rounded-full w-12 h-12 bg-white shadow-md flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-blue-500 transition duration-200"
+                        className="rounded-full w-10 h-10 sm:w-12 sm:h-12 bg-white shadow-md flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-blue-500 transition duration-200 shrink-0"
                         onClick={handleUserAction}
-                        // Atribut dinamis ini sekarang hanya dirender setelah client siap
                         aria-label={isLoggedIn ? "Menu Pengguna" : "Login"} 
                     >
-                        <User className={`text-2xl ${isLoggedIn ? 'text-blue-600' : 'text-gray-600'}`} /> {/* Ikon Pengguna */}
+                        <User className={`text-lg sm:text-2xl ${isLoggedIn ? 'text-blue-600' : 'text-gray-600'}`} />
                         {isLoggedIn && (
-                            <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full ring-2 ring-white bg-green-400"></span>
+                            <span className="absolute bottom-0 right-0 block h-2 w-2 sm:h-3 sm:w-3 rounded-full ring-2 ring-white bg-green-400"></span>
                         )}
                     </div>
                 </DropdownMenuTrigger>
@@ -190,7 +210,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
                         {isAdmin && (
                             <>
                                 <DropdownMenuItem 
-                                    onClick={() => router.push('/dashboard')} // Arahkan ke rute admin dashboard
+                                    onClick={() => router.push('/dashboard')}
                                     className="cursor-pointer font-semibold text-blue-600 focus:bg-blue-50 focus:text-blue-700"
                                 >
                                     <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -210,7 +230,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
                         </DropdownMenuItem>
                         
                         <DropdownMenuItem 
-                            onClick={() => router.push('/favorites')} 
+                            onClick={() => router.push('/favorit')} 
                             className="cursor-pointer"
                         >
                             <Heart className="mr-2 h-4 w-4 text-red-500" />
@@ -233,7 +253,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
         ) : (
             // Server-safe placeholder saat SSR/initial hydration
             <div 
-                className="rounded-full w-12 h-12 bg-gray-100 shadow-md flex items-center justify-center animate-pulse"
+                className="rounded-full w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 shadow-md flex items-center justify-center animate-pulse shrink-0"
             >
                 <User className={'text-gray-400'} />
             </div>

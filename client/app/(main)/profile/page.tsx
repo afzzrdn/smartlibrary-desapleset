@@ -95,22 +95,22 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <main className="bg-white rounded-xl h-[87.5vh] p-10 overflow-y-auto">
+    <main className="bg-white rounded-xl lg:h-[87.5vh] h-auto p-6 lg:p-10 overflow-y-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">👤 Profil Pengguna</h1>
-        <p className="text-gray-600">Informasi akun dan pengaturan profil Anda</p>
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">👤 Profil Pengguna</h1>
+        <p className="text-sm lg:text-base text-gray-600">Informasi akun dan pengaturan profil Anda</p>
       </div>
 
       {/* Profile Card Container */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
         
         {/* Left Column - Avatar & Basic Info */}
         <div className="md:col-span-1">
           <div className="bg-white rounded-xl p-6 border border-gray-200">
             {/* Avatar */}
             <div className="flex justify-center mb-6">
-              <div className="w-32 h-32 rounded-full border-4 border-gray-900 shadow-lg flex items-center justify-center bg-gray-100 overflow-hidden">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-gray-900 shadow-lg flex items-center justify-center bg-gray-100 overflow-hidden">
                 {profileData.avatar_url ? (
                   <img 
                     src={profileData.avatar_url} 
@@ -118,7 +118,7 @@ const ProfilePage: React.FC = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-900 flex items-center justify-center text-white text-4xl font-bold">
+                  <div className="w-full h-full bg-gray-900 flex items-center justify-center text-white text-3xl sm:text-4xl font-bold">
                     {profileData.name ? profileData.name.charAt(0).toUpperCase() : profileData.email.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -127,7 +127,7 @@ const ProfilePage: React.FC = () => {
 
             {/* Name & Role */}
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                 {profileData.name || 'Pengguna'}
               </h2>
               <div className="mt-3">
@@ -143,7 +143,7 @@ const ProfilePage: React.FC = () => {
 
             {/* Bio */}
             {profileData.bio && (
-              <p className="text-center text-gray-700 text-sm italic px-2">
+              <p className="text-center text-gray-700 text-xs sm:text-sm italic px-2">
                 "{profileData.bio}"
               </p>
             )}
@@ -151,35 +151,35 @@ const ProfilePage: React.FC = () => {
         </div>
 
         {/* Right Column - Detailed Information */}
-        <div className="md:col-span-2 space-y-6">
+        <div className="md:col-span-2 space-y-4 lg:space-y-6">
           
           {/* Email & Phone Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
             {/* Email Card */}
-            <div className="bg-white rounded-lg p-5 border border-gray-200">
+            <div className="bg-white rounded-lg p-4 lg:p-5 border border-gray-200">
               <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide block mb-2">📧 Email</label>
-              <p className="text-gray-900 font-semibold break-all">{profileData.email}</p>
+              <p className="text-gray-900 font-semibold break-all text-sm lg:text-base">{profileData.email}</p>
             </div>
 
             {/* Phone Card */}
-            <div className="bg-white rounded-lg p-5 border border-gray-200">
+            <div className="bg-white rounded-lg p-4 lg:p-5 border border-gray-200">
               <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide block mb-2">📞 Telepon</label>
-              <p className="text-gray-900 font-semibold">{profileData.phone || '—'}</p>
+              <p className="text-gray-900 font-semibold text-sm lg:text-base">{profileData.phone || '—'}</p>
             </div>
           </div>
 
           {/* ID & Member Since Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
             {/* User ID Card */}
-            <div className="bg-white rounded-lg p-5 border border-gray-200">
+            <div className="bg-white rounded-lg p-4 lg:p-5 border border-gray-200">
               <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide block mb-2">🔐 ID Pengguna</label>
-              <p className="text-gray-900 font-mono font-semibold">{profileData.id}</p>
+              <p className="text-gray-900 font-mono font-semibold text-xs sm:text-sm lg:text-base">{profileData.id}</p>
             </div>
 
             {/* Member Since Card */}
-            <div className="bg-white rounded-lg p-5 border border-gray-200">
+            <div className="bg-white rounded-lg p-4 lg:p-5 border border-gray-200">
               <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide block mb-2">📅 Bergabung</label>
-              <p className="text-gray-900 font-semibold text-sm">
+              <p className="text-gray-900 font-semibold text-xs sm:text-sm lg:text-base">
                 {new Date(profileData.createdAt).toLocaleDateString('id-ID', {
                   weekday: 'short',
                   year: 'numeric',
@@ -192,7 +192,7 @@ const ProfilePage: React.FC = () => {
 
           {/* Last Updated */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <p className="text-xs text-gray-700">
+            <p className="text-xs lg:text-sm text-gray-700">
               ℹ️ Diperbarui: {new Date(profileData.updatedAt).toLocaleDateString('id-ID', {
                 weekday: 'short',
                 year: 'numeric',
@@ -207,12 +207,13 @@ const ProfilePage: React.FC = () => {
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-10 flex gap-4">
+      <div className="mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4">
         <button
           onClick={logout}
-          className="px-6 py-2.5 bg-red-500 hover:bg-red-800 text-white font-semibold rounded-lg transition duration-200 flex items-center gap-2"
+          className="px-6 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg transition duration-200 flex items-center justify-center gap-2"
         >
-          Logout
+          <span>🚪</span>
+          Keluar (Logout)
         </button>
       </div>
     </main>

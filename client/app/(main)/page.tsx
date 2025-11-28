@@ -48,12 +48,12 @@ export default function Home() {
   const shouldShowLastRead = !searchTerm && lastReadBookIds.length > 0;
 
   return (
-        <main className="bg-white rounded-xl h-[87.5vh] p-10 overflow-y-auto">
+        <main className="bg-white rounded-b-xl lg:h-[87.5vh] h-auto p-6 lg:p-10 overflow-y-auto">
           
           {shouldShowLastRead && (
             <>
               {/* 📗 Section: Terakhir Dibaca */}
-              <h2 className="text-2xl font-bold mb-5 text-gray-800">
+              <h2 className="text-xl lg:text-2xl font-bold mb-5 text-gray-800">
                 Terakhir Dibaca
               </h2>
               
@@ -68,7 +68,7 @@ export default function Home() {
           )}
 
           {/* 📚 Section: Semua Buku / Hasil Pencarian */}
-          <h2 className="text-2xl font-bold mb-5 text-gray-800">
+          <h2 className="text-xl lg:text-2xl font-bold mb-5 text-gray-800">
             {searchTerm ? 'Hasil Pencarian' : 'Semua Buku'}
           </h2>
           

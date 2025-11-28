@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import React, { useEffect, useState, useMemo } from 'react'
 import { FiBook, FiHeart, FiFilter, FiX } from 'react-icons/fi';
 import { GoChevronDown, GoChevronUp } from 'react-icons/go';
+import { useFilter } from '../(main)/layout';
 
 // --- Interface untuk item yang tersimpan di localStorage ---
 interface LastReadItem {
@@ -75,10 +76,12 @@ interface FilterItem {
 interface BookCardProps {
   books?: Book[];
   searchTerm?: string;
+  onFilterClick?: () => void;
 }
 
-const BookCard: React.FC<BookCardProps> = ({ books: initialBooks = [], searchTerm = '' }) => {
+const BookCard: React.FC<BookCardProps> = ({ books: initialBooks = [], searchTerm = '', onFilterClick }) => {
     const router = useRouter();
+    const { filterOpen, setFilterOpen } = useFilter();
     const [allBooks, setAllBooks] = useState<Book[]>([]); 
     const [displayBooks, setDisplayBooks] = useState<Book[]>([]); 
     const [authToken, setAuthToken] = useState<string | undefined>(undefined);
@@ -87,7 +90,6 @@ const BookCard: React.FC<BookCardProps> = ({ books: initialBooks = [], searchTer
     // State untuk filters
     const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
     const [selectedGenres, setSelectedGenres] = useState<number[]>([]);
-    const [showFilters, setShowFilters] = useState(false);
     
     // State untuk kontrol dropdown filter
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -284,12 +286,12 @@ const BookCard: React.FC<BookCardProps> = ({ books: initialBooks = [], searchTer
                 
                 {/* 1. Tombol Toggle Filter Utama */}
                 <button 
-                    onClick={() => setShowFilters(!showFilters)}
+                    onClick={() => setFilterOpen(!filterOpen)}
                     className="flex items-center justify-center md:justify-start px-4 py-2 mb-3 md:mb-0 text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition text-sm font-medium w-full md:w-auto"
                 >
                     <FiFilter className="mr-2 text-base" />
-                    {showFilters ? 'Tutup Filter' : 'Buka Filter'}
-                    {showFilters ? <GoChevronUp className="ml-2" /> : <GoChevronDown className="ml-2" />}
+                    {filterOpen ? 'Tutup Filter' : 'Buka Filter'}
+                    {filterOpen ? <GoChevronUp className="ml-2" /> : <GoChevronDown className="ml-2" />}
                 </button>
 
                 {/* 2. Chip Filter Aktif */}
@@ -339,7 +341,7 @@ const BookCard: React.FC<BookCardProps> = ({ books: initialBooks = [], searchTer
                 </div>
 
                 {/* 3. Panel Filter Dropdown/Expanded */}
-                {showFilters && (
+                {filterOpen && (
                     <div className="mt-4 pt-4 border-t border-gray-200 w-full">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             
@@ -418,7 +420,7 @@ const BookCard: React.FC<BookCardProps> = ({ books: initialBooks = [], searchTer
                 {displayBooks.map((book) => (
                 <div 
                     key={book.id}
-                    className="bg-white shadow-lg rounded-xl transition duration-300 hover:shadow-xl hover:translate-y-[-2px] border border-gray-100"
+                    className="bg-white shadow-lg rounded-xl transition duration-300 hover:shadow-xl hover:-translate-y-0.5 border border-gray-100"
                 >
                     {/* ... (Thumbnail & Cover) ... */}
                     <div className="relative w-full h-[250px] bg-gray-200 rounded-t-xl mb-3 overflow-hidden">

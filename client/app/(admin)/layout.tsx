@@ -29,7 +29,7 @@ function SidebarNav() {
     { href: '/categories', icon: Users, label: 'Kelola Kategori' },
     { href: '/genres', icon: Users, label: 'Kelola Genre' },
     { href: '/members', icon: Users, label: 'Kelola Anggota' },
-    { href: '/favorites', icon: Heart, label: 'Favorit Anggota' }, // Contoh rute baru
+    { href: '/favorit', icon: Heart, label: 'Favorit Anggota' }, // Contoh rute baru
   ];
 
   return (

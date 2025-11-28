@@ -1,19 +1,42 @@
 "use client"
 import { useRouter } from 'next/navigation';
-import { FiHome, FiBook, FiHeart } from 'react-icons/fi'
+import { FiHome, FiBook, FiHeart, FiX } from 'react-icons/fi'
 
-const Sidebar = () => {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+const Sidebar = ({ onClose }: SidebarProps) => {
     const router = useRouter();
   
 
-  const goToHome = () => router.push("/");
-  const goToBook = () => router.push("/daftar-buku");
-  const goToFavorit = () => router.push("/favorit");
+  const goToHome = () => {
+    router.push("/");
+    onClose?.();
+  };
+  
+  const goToBook = () => {
+    router.push("/daftar-buku");
+    onClose?.();
+  };
+  
+  const goToFavorit = () => {
+    router.push("/favorit");
+    onClose?.();
+  };
+  
   return (
-    <aside className="flex px-5 py-4 flex-col h-[96vh] rounded-xl bg-white justify-between shadow-sm">
+    <aside className="flex px-5 py-4 flex-col h-full lg:h-[96vh] rounded-xl bg-white justify-between shadow-sm">
+        {/* Close button for mobile */}
+        {onClose && (
+          <button onClick={onClose} className="lg:hidden absolute top-4 right-4">
+            <FiX className="text-2xl text-gray-600" />
+          </button>
+        )}
+        
         <div>
-          <div className="flex items-center gap-2 mb-5 px-3">
-            <img src={"/Logo Plasma.png"} width={30} height={30} />
+          <div className="flex items-center gap-2 mb-5 px-3 mt-8 lg:mt-0">
+            <img src={"/Logo Plasma.png"} width={30} height={30} alt="Logo" />
             <h1 className="pt-2 text-xl font-bold">SmartLibrary</h1>
           </div>
 
