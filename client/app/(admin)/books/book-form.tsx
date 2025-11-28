@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Cookies from 'js-cookie';
 
 interface Option {
     id: number;
@@ -76,8 +77,19 @@ export default function BookForm({ categories, genres }: BookFormProps) {
         try {
             // KIRIM DATA KE API EXPRESS
             const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+            
+            // Ambil token dari cookie
+            const token = Cookies.get('auth_token');
+            if (!token) {
+                setError('Token tidak ditemukan. Silakan login terlebih dahulu.');
+                return;
+            }
+
             const res = await fetch(`${apiBaseUrl}/api/books`, {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
                 // PENTING: Jangan set Content-Type, browser akan set otomatis 'multipart/form-data' dengan boundary
                 body: data, 
             });
