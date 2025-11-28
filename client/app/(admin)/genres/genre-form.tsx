@@ -28,7 +28,7 @@ export default function GenreForm() {
 
     try {
       // Mengirim POST ke API genres
-      const apiBaseUrl= process.env.NEXT_PUBLIC_API_BASE_URL;
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
       const res = await fetch(`${apiBaseUrl}/api/genres`, {
         method: 'POST',
         headers: {

@@ -16,7 +16,8 @@ import CategoryForm from './category-form';
 // --- SERVER COMPONENT: FETCH DATA ---
 async function getCategories() {
   // Fetch data di sisi server (Sangat cepat di Next.js)
-  const res = await fetch('http://localhost:8000/api/categories', {
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+  const res = await fetch(`${apiBaseUrl}/api/categories`, {
     cache: 'no-store', // Selalu fetch data terbaru
   });
 

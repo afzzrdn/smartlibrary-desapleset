@@ -75,7 +75,8 @@ export default function BookForm({ categories, genres }: BookFormProps) {
 
         try {
             // KIRIM DATA KE API EXPRESS
-            const res = await fetch('http://localhost:8000/api/books', {
+            const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+            const res = await fetch(`${apiBaseUrl}/api/books`, {
                 method: 'POST',
                 // PENTING: Jangan set Content-Type, browser akan set otomatis 'multipart/form-data' dengan boundary
                 body: data, 

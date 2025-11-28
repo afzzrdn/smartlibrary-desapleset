@@ -16,7 +16,8 @@ import GenreForm from './genre-form'; // Import komponen form genre
 // --- SERVER COMPONENT: FETCH DATA ---
 async function getGenres() {
   // Fetch data dari API genres
-  const res = await fetch('http://localhost:8000/api/genres', {
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const res = await fetch(`${apiBaseUrl}/api/genres`, {
     cache: 'no-store',
   });
 
