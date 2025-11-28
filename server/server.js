@@ -3,7 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const app = express();
 
-const port = process.env.PORT || 3100;
+const port = process.env.PORT || 8000;
 
 // ===============================
 // CORS untuk semua jaringan
