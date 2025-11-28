@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # 1. Layanan API (Express.js)
+  api:
+    build: .
+    ports:
+      - "8000:8000" 
+    env_file:
+      - .env 
+    volumes:
+      - .:/app 
+    depends_on:
+      - db 
+    # --- TAMBAHKAN 'command' INI ---
+    command: >
+      sh -c "npx prisma db push && 
+             npx prisma db seed &&
+             npm run start:dev"
+    # 'migrate deploy' menerapkan migrasi
+    # 'db seed' menjalankan prisma/seed.js
+    # 'node server.js' menjalankan server Anda
+
+  # 2. Layanan Database (PostgreSQL)
+  db:
+    image: postgres:15-alpine 
+    ports:
+      - "5433:5432" 
+    env_file:
+      - .env 
+    volumes:
+      - pgdata:/var/lib/postgresql/data 
+
+volumes:
+  pgdata:

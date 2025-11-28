@@ -1,0 +1,92 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // Mengambil dari .env
+}
+
+// ===================================
+// MODEL UTAMA
+// ===================================
+
+model User {
+  id              Int               @id @default(autoincrement())
+  email           String            @unique
+  password        String
+  role            String            @default("user")
+  
+  // Profile fields untuk tampilan yang lebih professional
+  name            String?           // Nama lengkap user
+  phone           String?           // Nomor telepon
+  bio             String?           // Biografi singkat
+  avatar_url      String?           // URL foto profil
+  
+  // Timestamp
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relasi ke tabel baru
+  favorites       Favorite[] // Daftar buku favorit pengguna
+  reading_history ReadingHistory[] // Riwayat baca pengguna
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  books Book[] // Relasi: Satu Kategori punya banyak Buku
+}
+
+model Genre {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  books Book[]
+}
+
+model Book {
+  id              Int              @id @default(autoincrement())
+  title           String
+  author          String
+  description     String?
+  cover_image_url String?
+  file_url        String
+  created_at      DateTime         @default(now())
+
+  category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId Int? // Kolom 'category_id'
+
+  genre   Genre? @relation(fields: [genreId], references: [id])
+  genreId Int? // Kolom 'genre_id'
+
+  // Relasi ke tabel baru
+  favorited_by Favorite[] // Pengguna mana saja yang memfavoritkan buku ini
+  read_by      ReadingHistory[] // Riwayat baca buku ini
+}
+
+model Favorite {
+  user      User @relation(fields: [userId], references: [id])
+  userId    Int // Foreign Key ke User
+  
+  book      Book @relation(fields: [bookId], references: [id])
+  bookId    Int // Foreign Key ke Book
+
+  created_at DateTime @default(now()) // Kapan favorit ditambahkan
+
+  @@id([userId, bookId]) // Menjadikan pasangan userId dan bookId sebagai Primary Key gabungan (agar tidak ada duplikat)
+}
+
+model ReadingHistory {
+  user      User @relation(fields: [userId], references: [id])
+  userId    Int // Foreign Key ke User
+  
+  book      Book @relation(fields: [bookId], references: [id])
+  bookId    Int // Foreign Key ke Book
+
+  last_read_page Int      @default(0) // Halaman terakhir yang dibaca
+  last_read_at   DateTime @updatedAt // Waktu terakhir buku dibaca (akan otomatis update)
+  started_at     DateTime @default(now()) // Waktu pertama buku dibuka
+
+  @@id([userId, bookId]) // Menjadikan pasangan userId dan bookId sebagai Primary Key gabungan
+}
