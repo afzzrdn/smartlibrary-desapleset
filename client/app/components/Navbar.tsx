@@ -2,6 +2,7 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Search, User, LogOut, Heart, LayoutDashboard, Menu, Filter } from 'lucide-react'; 
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/context/AuthContext';
 // Asumsi path komponen UI (shadcn/ui) sudah benar
 import {
     DropdownMenu,
@@ -23,34 +24,6 @@ interface Book {
 }
 
 type DebounceValue = string | number | undefined;
-
-// --- UTILITY: Hapus Cookie ---
-const deleteAuthCookie = (name: string) => {
-    document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-};
-
-// --- UTILITY: Ambil Token ---
-const getAuthTokenFromCookie = (): string | undefined => {
-    const name = "auth_token=";
-    const decodedCookie = decodeURIComponent(document.cookie);
-    const ca = decodedCookie.split(';');
-    for(let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') {
-            c = c.substring(1);
-        }
-        if (c.indexOf(name) === 0) {
-            return c.substring(name.length, c.length);
-        }
-    }
-    return undefined;
-};
-
-// --- UTILITY BARU: Cek Role Admin (Simulasi) ---
-const checkAdminRole = (): boolean => {
-    // Untuk simulasi, kita bisa cek cookie khusus 'user_role=admin'
-    return document.cookie.includes('user_role=admin');
-};
 
 
 const useDebounce = <T extends DebounceValue>(value: T, delay: number): T => {
@@ -77,30 +50,17 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ onSearch, onMenuClick, onFilterClick }) => {
   const router = useRouter();
+  const { isLoggedIn, user, logout } = useAuth();
   
   // State untuk nilai input saat ini
   const [searchTerm, setSearchTerm] = useState<string>('');
   
-  // State untuk status login & role admin
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); 
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  
   // 💡 FIX HYDRATION: State baru untuk menandai kapan klien selesai memuat (hanya true di client)
   const [isClientReady, setIsClientReady] = useState<boolean>(false);
+  const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
   
   // Check auth status on mount
   useEffect(() => {
-    const token = getAuthTokenFromCookie();
-    setIsLoggedIn(!!token); 
-    
-    // Cek role admin hanya jika login
-    if (token) {
-        setIsAdmin(checkAdminRole());
-    } else {
-        setIsAdmin(false);
-    }
-    
-    // Tandai bahwa semua pemeriksaan sisi klien selesai
     setIsClientReady(true);
   }, []); 
 
@@ -121,31 +81,13 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch, onMenuClick, onFilterClick })
   
   // Logic untuk Logout
   const handleLogout = () => {
-    console.log("Melakukan proses logout user: Menghapus auth_token dan localStorage...");
-    
-    // 1. Hapus dari cookies
-    deleteAuthCookie("auth_token");
-    deleteAuthCookie("user_role"); 
-    
-    // 2. Hapus dari localStorage (PENTING: jangan lupa!)
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user');
-    
-    // 3. Update state lokal
-    setIsLoggedIn(false); 
-    setIsAdmin(false); 
-    
-    // 4. Redirect ke halaman login
+    console.log("Melakukan proses logout user...");
+    logout();
     router.push('/login'); 
   };
-  
-  // Logic untuk Profil / Login
-  const handleUserAction = () => {
-      if (!isLoggedIn) {
-          router.push('/login');
-      }
-      // Jika sudah login, DropdownMenuTrigger yang akan mengaktifkan menu
-  };
+
+  // Cek apakah user adalah admin
+  const isAdmin = isLoggedIn && user?.role === 'admin';
 
 
   return (
@@ -196,29 +138,30 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch, onMenuClick, onFilterClick })
       {/* User Profile / Auth Area - Render hanya ketika Client Ready */}
       <div className="relative">
         {isClientReady ? (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <div 
-                        className="rounded-full w-10 h-10 sm:w-12 sm:h-12 bg-white shadow-md flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-blue-500 transition duration-200 shrink-0"
-                        onClick={handleUserAction}
-                        aria-label={isLoggedIn ? "Menu Pengguna" : "Login"} 
-                    >
-                        <User className={`text-lg sm:text-2xl ${isLoggedIn ? 'text-blue-600' : 'text-gray-600'}`} />
-                        {isLoggedIn && (
+            <>
+              {isLoggedIn ? (
+                <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                    <DropdownMenuTrigger asChild>
+                        <button 
+                            type="button"
+                            className="rounded-full w-10 h-10 sm:w-12 sm:h-12 bg-white shadow-md flex items-center justify-center hover:ring-2 hover:ring-blue-500 transition duration-200 shrink-0"
+                            aria-label="Menu Pengguna" 
+                        >
+                            <User className="text-lg sm:text-2xl text-blue-600" />
                             <span className="absolute bottom-0 right-0 block h-2 w-2 sm:h-3 sm:w-3 rounded-full ring-2 ring-white bg-green-400"></span>
-                        )}
-                    </div>
-                </DropdownMenuTrigger>
-                
-                {/* Dropdown hanya ditampilkan jika user sudah login */}
-                {isLoggedIn && (
+                        </button>
+                    </DropdownMenuTrigger>
+                    
                     <DropdownMenuContent align="end" className="w-48">
                         
                         {/* TOMBOL DASHBOARD (TAMPIL HANYA JIKA ADMIN) */}
                         {isAdmin && (
                             <>
                                 <DropdownMenuItem 
-                                    onClick={() => router.push('/dashboard')}
+                                    onClick={() => {
+                                      setDropdownOpen(false);
+                                      router.push('/dashboard');
+                                    }}
                                     className="cursor-pointer font-semibold text-blue-600 focus:bg-blue-50 focus:text-blue-700"
                                 >
                                     <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -230,7 +173,10 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch, onMenuClick, onFilterClick })
 
                         {/* Menu Pengguna Reguler */}
                         <DropdownMenuItem 
-                            onClick={() => router.push('/profile')} 
+                            onClick={() => {
+                              setDropdownOpen(false);
+                              router.push('/profile');
+                            }}
                             className="cursor-pointer"
                         >
                             <User className="mr-2 h-4 w-4 text-gray-600" />
@@ -238,7 +184,10 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch, onMenuClick, onFilterClick })
                         </DropdownMenuItem>
                         
                         <DropdownMenuItem 
-                            onClick={() => router.push('/favorit')} 
+                            onClick={() => {
+                              setDropdownOpen(false);
+                              router.push('/favorit');
+                            }}
                             className="cursor-pointer"
                         >
                             <Heart className="mr-2 h-4 w-4 text-red-500" />
@@ -249,15 +198,29 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch, onMenuClick, onFilterClick })
                         
                         {/* Tombol Logout */}
                         <DropdownMenuItem 
-                            onClick={handleLogout} 
+                            onClick={() => {
+                              setDropdownOpen(false);
+                              handleLogout();
+                            }}
                             className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700"
                         >
                             <LogOut className="mr-2 h-4 w-4" />
                             Logout
                         </DropdownMenuItem>
                     </DropdownMenuContent>
-                )}
-            </DropdownMenu>
+                </DropdownMenu>
+              ) : (
+                // Tombol Login untuk user yang belum login
+                <button
+                  type="button"
+                  onClick={() => router.push('/login')}
+                  className="rounded-full w-10 h-10 sm:w-12 sm:h-12 bg-white shadow-md flex items-center justify-center hover:ring-2 hover:ring-blue-500 transition duration-200 shrink-0"
+                  aria-label="Login"
+                >
+                  <User className="text-lg sm:text-2xl text-gray-600" />
+                </button>
+              )}
+            </>
         ) : (
             // Server-safe placeholder saat SSR/initial hydration
             <div 

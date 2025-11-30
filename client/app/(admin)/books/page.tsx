@@ -71,6 +71,7 @@ export default async function ManageBooksPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">No</TableHead>
                     <TableHead>Judul & Penulis</TableHead>
                     <TableHead>Kategori / Genre</TableHead>
                     <TableHead>Path File</TableHead>
@@ -78,8 +79,11 @@ export default async function ManageBooksPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {books.map((book: any) => (
+                  {books.map((book: any, index: number) => (
                     <TableRow key={book.id}>
+                      <TableCell className="text-center font-bold text-gray-600">
+                        {index + 1}
+                      </TableCell>
                       <TableCell className="font-medium">
                         <span className='font-bold'>{book.title}</span><br/>
                         <span className='text-sm text-gray-500'>Oleh: {book.author}</span>

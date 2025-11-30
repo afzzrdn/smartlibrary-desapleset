@@ -10,14 +10,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useState, useEffect } from 'react';
-
-// --- UTILITY: Hapus Cookie ---
-const deleteAuthCookie = (name: string) => {
-    document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-};
+import ProtectedAdminRoute from '@/app/components/ProtectedAdminRoute';
+import { useAuth } from '@/app/context/AuthContext';
 
 function SidebarNav() {
   const pathname = usePathname();
@@ -64,7 +61,8 @@ function SidebarNav() {
 // Komponen Header Atas (Topbar)
 function Header() {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const { logout } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isClientReady, setIsClientReady] = useState(false);
 
   useEffect(() => {
@@ -73,16 +71,7 @@ function Header() {
 
   const handleLogout = () => {
     console.log("Logging out...");
-    
-    // 1. Hapus dari cookies
-    deleteAuthCookie("auth_token");
-    deleteAuthCookie("user_role");
-    
-    // 2. Hapus dari localStorage (PENTING!)
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user');
-    
-    // 3. Redirect ke halaman login
+    logout();
     router.push('/login'); 
   };
 
@@ -92,8 +81,27 @@ function Header() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-white px-4 sm:px-8 shadow-sm">
-      {/* Logo/Title untuk Mobile */}
+      {/* Hamburger Menu untuk Mobile */}
       <div className="flex items-center gap-3 sm:hidden">
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetTrigger asChild>
+            <button className="p-2 hover:bg-gray-100 rounded-lg transition">
+              <Menu className="h-6 w-6 text-gray-700" />
+            </button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 p-0">
+            <SheetTitle className="sr-only">Admin Navigation</SheetTitle>
+            <div className="flex h-16 items-center border-b px-6">
+              <Link href="/dashboard" className="font-bold text-lg text-gray-900">
+                E-Library
+              </Link>
+              <span className="text-xs bg-gray-900 text-white px-2 py-1 rounded ml-auto">Admin</span>
+            </div>
+            <div className="overflow-y-auto py-6">
+              <SidebarNav />
+            </div>
+          </SheetContent>
+        </Sheet>
         <Link href="/dashboard" className="font-bold text-lg text-gray-900">
           E-Lib
         </Link>
@@ -140,29 +148,31 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen w-full bg-gray-50">
-      {/* Sidebar untuk Desktop */}
-      <aside className="hidden sm:flex w-64 flex-col border-r bg-white shadow-lg"> 
-        <div className="flex h-16 items-center border-b px-6">
-          <Link href="/dashboard" className="font-bold text-lg text-gray-900">
-            E-Library
-          </Link>
-          <span className="text-xs bg-gray-900 text-white px-2 py-1 rounded ml-auto">Admin</span>
-        </div>
-        <div className="flex-1 overflow-y-auto py-6">
-          <SidebarNav />
-        </div>
-      </aside>
-
-      {/* Konten Utama */}
-      <div className="flex flex-col flex-1"> 
-        <Header />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8">
-          <div className="max-w-7xl mx-auto">
-            {children}
+    <ProtectedAdminRoute>
+      <div className="flex min-h-screen w-full bg-gray-50">
+        {/* Sidebar untuk Desktop */}
+        <aside className="hidden sm:flex w-64 flex-col border-r bg-white shadow-lg"> 
+          <div className="flex h-16 items-center border-b px-6">
+            <Link href="/dashboard" className="font-bold text-lg text-gray-900">
+              E-Library
+            </Link>
+            <span className="text-xs bg-gray-900 text-white px-2 py-1 rounded ml-auto">Admin</span>
           </div>
-        </main>
+          <div className="flex-1 overflow-y-auto py-6">
+            <SidebarNav />
+          </div>
+        </aside>
+
+        {/* Konten Utama */}
+        <div className="flex flex-col flex-1"> 
+          <Header />
+          <main className="flex-1 overflow-y-auto p-4 sm:p-8">
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </ProtectedAdminRoute>
   );
 }

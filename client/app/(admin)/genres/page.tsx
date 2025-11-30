@@ -66,15 +66,15 @@ export default async function ManageGenresPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ID</TableHead>
+                    <TableHead className="w-12">No</TableHead>
                     <TableHead>Nama Genre</TableHead>
                     <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {genres.map((genre: any) => (
+                  {genres.map((genre: any, index: number) => (
                     <TableRow key={genre.id}>
-                      <TableCell className='w-1/12'>{genre.id}</TableCell>
+                      <TableCell className='text-center font-bold text-gray-600'>{index + 1}</TableCell>
                       <TableCell className="font-medium">{genre.name}</TableCell>
                       <TableCell className="text-right flex gap-2 justify-end">
                         <GenreActions genreId={genre.id} genreName={genre.name} />

@@ -188,13 +188,6 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
-
-            {/* Demo Credentials */}
-            <div className="bg-blue-50 rounded-lg p-4 text-sm text-gray-600">
-              <p className="font-semibold text-gray-700 mb-2">📝 Kredensial Demo:</p>
-              <p>Email: <code className="bg-white px-2 py-1 rounded text-xs">admin@elibrary.com</code></p>
-              <p>Password: <code className="bg-white px-2 py-1 rounded text-xs">admin123</code></p>
-            </div>
           </div>
 
           {/* Footer */}

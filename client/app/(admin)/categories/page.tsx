@@ -81,15 +81,15 @@ export default async function ManageCategoriesPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gray-50 border-b">
-                        <TableHead className="font-semibold text-gray-700">ID</TableHead>
+                        <TableHead className="font-semibold text-gray-700 w-12">No</TableHead>
                         <TableHead className="font-semibold text-gray-700">Nama Kategori</TableHead>
                         <TableHead className="text-right font-semibold text-gray-700">Aksi</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {categories.map((cat: any) => (
+                      {categories.map((cat: any, index: number) => (
                         <TableRow key={cat.id} className="border-b hover:bg-gray-50">
-                          <TableCell className='text-sm text-gray-600'>{cat.id}</TableCell>
+                          <TableCell className='text-sm text-center font-bold text-gray-600'>{index + 1}</TableCell>
                           <TableCell className="font-medium text-gray-900">{cat.name}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex gap-2 justify-end">

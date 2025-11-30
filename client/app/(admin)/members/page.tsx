@@ -85,7 +85,7 @@ export default function ManageMembersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
+                  <TableHead className="w-12">No</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Nama</TableHead>
                   <TableHead>Role</TableHead>
@@ -95,9 +95,9 @@ export default function ManageMembersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {members.map((member: any) => (
+                {members.map((member: any, index: number) => (
                   <TableRow key={member.id}>
-                    <TableCell className="font-medium">{member.id}</TableCell>
+                    <TableCell className="font-bold text-center text-gray-600">{index + 1}</TableCell>
                     <TableCell>{member.email}</TableCell>
                     <TableCell>{member.name || '-'}</TableCell>
                     <TableCell>

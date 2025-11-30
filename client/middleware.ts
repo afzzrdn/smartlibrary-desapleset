@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 const protectedAdminRoutes = '/admin';
 const LOGIN_PATH = '/login';
-const ADMIN_DASHBOARD_PATH = '/admin/dashboard';
+const ADMIN_DASHBOARD_PATH = '/dashboard';
 
 export async function middleware(request: NextRequest) {
   const tokenCookie = request.cookies.get('auth_token');
