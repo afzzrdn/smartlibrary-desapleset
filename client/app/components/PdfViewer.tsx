@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 // Impor ikon yang diperlukan dari lucide-react
-import { ChevronLeft, ChevronRight, Loader2, Download, ZoomIn, ZoomOut } from "lucide-react"; 
+import { ChevronLeft, ChevronRight, Loader2, Download, ZoomIn, ZoomOut, List, Grid3x3 } from "lucide-react"; 
 
 // --- Impor Tipe PDF.js ---
 // Impor tipe untuk objek dokumen PDF agar TypeScript tidak error 'implicitly has an any type'
@@ -12,9 +12,20 @@ import type { PDFDocumentProxy } from "pdfjs-dist";
 // Tipe untuk menampung referensi objek PDF yang dimuat
 type PdfReference = PDFDocumentProxy | null;
 
+// Tipe untuk cache halaman yang sudah di-render
+type PageCache = {
+  [key: string]: HTMLCanvasElement;
+};
+
+// Tipe mode tampilan
+type ViewMode = 'slide' | 'scroll';
+
 export default function PDFViewer({ fileUrl }: { fileUrl: string }) {
   const viewerRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const pdfNameRef = useRef<string>("");
+  const pageCacheRef = useRef<PageCache>({});
+  const observerRef = useRef<IntersectionObserver | null>(null);
   
   // State untuk melacak halaman saat ini, total halaman, dan status loading
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,11 +33,30 @@ export default function PDFViewer({ fileUrl }: { fileUrl: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [scale, setScale] = useState(1.0);
   const [jumpPageInput, setJumpPageInput] = useState<string>('');
+  const [isMobile, setIsMobile] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('slide');
   
   // State untuk menyimpan referensi dokumen PDF yang dimuat
   const [pdfDoc, setPdfDoc] = useState<PdfReference>(null);
+  
+  // Efek untuk deteksi mobile dan set default view mode
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768; // Breakpoint md
+      setIsMobile(mobile);
+      // Set view mode ke scroll otomatis jika mobile
+      if (mobile && viewMode !== 'scroll') {
+        setViewMode('scroll');
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [viewMode]);
 
   // Fungsi untuk merender halaman spesifik ke container dengan scale
+  // Menggunakan cache untuk mencegah rendering ulang
   const renderPage = useCallback(async (
     pdf: PDFDocumentProxy, 
     pageNum: number, 
@@ -37,6 +67,17 @@ export default function PDFViewer({ fileUrl }: { fileUrl: string }) {
     setIsLoading(true);
 
     try {
+      // Cek cache terlebih dahulu
+      const cacheKey = `${pageNum}-${Math.round(zoomScale * 100)}`;
+      if (pageCacheRef.current[cacheKey]) {
+        const cachedCanvas = pageCacheRef.current[cacheKey] as HTMLCanvasElement;
+        // Append langsung canvas yang sudah di-cache
+        container.appendChild(cachedCanvas);
+        container.scrollTop = 0;
+        setIsLoading(false);
+        return;
+      }
+
       const page = await pdf.getPage(pageNum);
       
       // Menggunakan scale yang diberikan (default 1.0)
@@ -61,6 +102,9 @@ export default function PDFViewer({ fileUrl }: { fileUrl: string }) {
         viewport,
       }).promise;
 
+      // Simpan ke cache
+      pageCacheRef.current[cacheKey] = canvas;
+
       container.appendChild(canvas);
       container.scrollTop = 0; // Kembali ke atas halaman
       
@@ -71,6 +115,147 @@ export default function PDFViewer({ fileUrl }: { fileUrl: string }) {
     }
   }, []);
 
+  // Fungsi untuk merender semua halaman dalam container scroll (dengan lazy loading)
+  const renderAllPages = useCallback(async (
+    pdf: PDFDocumentProxy,
+    container: HTMLDivElement,
+    zoomScale: number
+  ) => {
+    container.innerHTML = ""; // Bersihkan container
+    setIsLoading(true);
+
+    try {
+      // Render 3 halaman pertama terlebih dahulu
+      const initialPages = 3;
+      const totalPages = pdf.numPages;
+      
+      for (let pageNum = 1; pageNum <= Math.min(initialPages, totalPages); pageNum++) {
+        const cacheKey = `${pageNum}-${Math.round(zoomScale * 100)}`;
+        
+        // Buat container untuk setiap halaman
+        const pageContainer = document.createElement('div');
+        pageContainer.className = 'mb-4 pb-4 border-b border-gray-300';
+        pageContainer.id = `page-${pageNum}`;
+        
+        // Cek cache terlebih dahulu
+        if (pageCacheRef.current[cacheKey]) {
+          const cachedCanvas = pageCacheRef.current[cacheKey] as HTMLCanvasElement;
+          pageContainer.appendChild(cachedCanvas);
+        } else {
+          try {
+            const page = await pdf.getPage(pageNum);
+            const viewport = page.getViewport({ scale: zoomScale });
+            
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d")!;
+            
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            
+            canvas.style.width = 'auto';
+            canvas.style.height = 'auto';
+            canvas.style.maxWidth = '100%';
+            canvas.className = "shadow-lg mx-auto block";
+            
+            await page.render({
+              canvasContext: context,
+              canvas: canvas,
+              viewport,
+            }).promise;
+            
+            pageCacheRef.current[cacheKey] = canvas;
+            pageContainer.appendChild(canvas);
+          } catch (error) {
+            console.error(`Gagal render halaman ${pageNum}:`, error);
+          }
+        }
+        
+        container.appendChild(pageContainer);
+      }
+      
+      // Lazy load halaman berikutnya
+      for (let pageNum = initialPages + 1; pageNum <= totalPages; pageNum++) {
+        const cacheKey = `${pageNum}-${Math.round(zoomScale * 100)}`;
+        
+        const pageContainer = document.createElement('div');
+        pageContainer.className = 'mb-4 pb-4 border-b border-gray-300';
+        pageContainer.id = `page-${pageNum}`;
+        pageContainer.setAttribute('data-page', String(pageNum));
+        
+        // Placeholder untuk lazy load
+        const placeholder = document.createElement('div');
+        placeholder.className = 'h-96 bg-gray-200 rounded flex items-center justify-center';
+        placeholder.textContent = `Halaman ${pageNum}...`;
+        pageContainer.appendChild(placeholder);
+        
+        container.appendChild(pageContainer);
+      }
+      
+      setNumPages(pdf.numPages);
+      setCurrentPage(1);
+      
+      // Cleanup observer sebelumnya jika ada
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+      
+      // Setup intersection observer untuk lazy load
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(async (entry) => {
+          if (entry.isIntersecting) {
+            const pageContainer = entry.target as HTMLDivElement;
+            const pageNum = parseInt(pageContainer.getAttribute('data-page') || '0');
+            
+            if (pageNum > 0 && pageContainer.children.length === 1 && pageContainer.children[0].classList.contains('bg-gray-200')) {
+              // Render halaman ini
+              const cacheKey = `${pageNum}-${Math.round(zoomScale * 100)}`;
+              
+              try {
+                const page = await pdf.getPage(pageNum);
+                const viewport = page.getViewport({ scale: zoomScale });
+                
+                const canvas = document.createElement("canvas");
+                const context = canvas.getContext("2d")!;
+                
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                
+                canvas.style.width = 'auto';
+                canvas.style.height = 'auto';
+                canvas.style.maxWidth = '100%';
+                canvas.className = "shadow-lg mx-auto block";
+                
+                await page.render({
+                  canvasContext: context,
+                  canvas: canvas,
+                  viewport,
+                }).promise;
+                
+                pageCacheRef.current[cacheKey] = canvas;
+                pageContainer.innerHTML = '';
+                pageContainer.appendChild(canvas);
+                
+                observer.unobserve(pageContainer);
+              } catch (error) {
+                console.error(`Gagal lazy load halaman ${pageNum}:`, error);
+              }
+            }
+          }
+        });
+      }, { rootMargin: '500px' });
+      
+      // Store observer ref untuk cleanup nanti
+      observerRef.current = observer;
+      
+      // Observe placeholder containers
+      document.querySelectorAll('[data-page]').forEach(el => observer.observe(el));
+      
+    } catch (error) {
+      console.error("Gagal merender semua halaman:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
   
   // Efek 1: Memuat Dokumen PDF Awal
   useEffect(() => {
@@ -114,22 +299,45 @@ export default function PDFViewer({ fileUrl }: { fileUrl: string }) {
         if (pdfDoc) {
             pdfDoc.destroy();
         }
+        // Clear cache untuk menghemat memori
+        pageCacheRef.current = {};
     };
   }, [fileUrl]); 
 
   
-  // Efek 2: Merender Halaman Saat pdfDoc, currentPage, atau scale Berubah
+  // Efek 2: Merender Halaman Saat pdfDoc, currentPage, scale, atau viewMode Berubah
   useEffect(() => {
     const container = viewerRef.current;
     
-    // Hanya render jika dokumen dan container sudah siap, dan halaman ada
-    if (!pdfDoc || !container || currentPage < 1 || currentPage > numPages) {
+    // Hanya render jika dokumen dan container sudah siap
+    if (!pdfDoc || !container) {
         return;
     }
 
-    renderPage(pdfDoc, currentPage, container, scale);
+    if (viewMode === 'scroll') {
+      // Mode scroll: render semua halaman
+      renderAllPages(pdfDoc, container, scale);
+    } else {
+      // Mode slide: cleanup observer dan render halaman saat ini
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+      
+      if (currentPage < 1 || currentPage > numPages) {
+        return;
+      }
+      renderPage(pdfDoc, currentPage, container, scale);
+    }
 
-  }, [pdfDoc, currentPage, numPages, renderPage, scale]); 
+    // Cleanup: Disconnect observers saat unmount atau mode berubah
+    return () => {
+      if (observerRef.current && viewMode === 'scroll') {
+        observerRef.current.disconnect();
+      }
+    };
+
+  }, [pdfDoc, currentPage, numPages, renderPage, renderAllPages, scale, viewMode]); 
 
 
   // --- Fungsi Navigasi ---
@@ -206,27 +414,29 @@ export default function PDFViewer({ fileUrl }: { fileUrl: string }) {
     <div className="flex flex-col items-center">
       
       {/* Kontrol Navigasi & Toolbar */}
-      <div className="flex justify-between items-center w-full max-w-[90vw] p-2 bg-white shadow-md rounded-t-lg gap-2 flex-wrap">
-        {/* Navigation Buttons */}
-        <div className="flex gap-1">
-          <button
-            onClick={goToPrevPage}
-            disabled={currentPage <= 1 || isLoading || numPages === 0}
-            className="p-2 bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50 transition"
-            title="Halaman Sebelumnya"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          
-          <button
-            onClick={goToNextPage}
-            disabled={currentPage >= numPages || isLoading || numPages === 0}
-            className="p-2 bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50 transition"
-            title="Halaman Berikutnya"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
+      <div className="flex justify-between items-center w-full max-w-[90vw] p-2 bg-white shadow-md gap-2 flex-wrap">
+        {/* Navigation Buttons - Hanya tampil saat Slide Mode */}
+        {viewMode === 'slide' && (
+          <div className="flex gap-1">
+            <button
+              onClick={goToPrevPage}
+              disabled={currentPage <= 1 || isLoading || numPages === 0}
+              className="p-2 bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50 transition"
+              title="Halaman Sebelumnya"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            
+            <button
+              onClick={goToNextPage}
+              disabled={currentPage >= numPages || isLoading || numPages === 0}
+              className="p-2 bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50 transition"
+              title="Halaman Berikutnya"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        )}
 
         {/* Page Info */}
         <span className="text-sm font-medium flex items-center min-w-fit gap-2">
@@ -269,7 +479,7 @@ export default function PDFViewer({ fileUrl }: { fileUrl: string }) {
         <div className="flex gap-1 items-center">
           <button
             onClick={handleZoomOut}
-            disabled={scale <= 0.5 || isLoading || numPages === 0}
+            disabled={scale <= 0.5 || isLoading || numPages === 0 || viewMode === 'scroll'}
             className="p-2 bg-blue-200 hover:bg-blue-300 rounded disabled:opacity-50 transition"
             title="Perkecil (Zoom Out)"
           >
@@ -282,7 +492,7 @@ export default function PDFViewer({ fileUrl }: { fileUrl: string }) {
 
           <button
             onClick={handleZoomIn}
-            disabled={scale >= 2.5 || isLoading || numPages === 0}
+            disabled={scale >= 2.5 || isLoading || numPages === 0 || viewMode === 'scroll'}
             className="p-2 bg-blue-200 hover:bg-blue-300 rounded disabled:opacity-50 transition"
             title="Perbesar (Zoom In)"
           >
@@ -291,11 +501,39 @@ export default function PDFViewer({ fileUrl }: { fileUrl: string }) {
 
           <button
             onClick={handleResetZoom}
-            disabled={scale === 1.0 || isLoading || numPages === 0}
+            disabled={scale === 1.0 || isLoading || numPages === 0 || viewMode === 'scroll'}
             className="p-2 bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50 transition text-xs"
             title="Reset Zoom ke 100%"
           >
             100%
+          </button>
+        </div>
+
+        {/* View Mode Toggle - Tampil di semua mode */}
+        <div className="flex gap-1 items-center border-l border-gray-300 pl-2 ml-2">
+          <button
+            onClick={() => setViewMode('slide')}
+            disabled={isLoading || numPages === 0}
+            className={`p-2 rounded transition ${
+              viewMode === 'slide'
+                ? 'bg-purple-500 text-white'
+                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+            }`}
+            title="Slide Mode - Lihat satu halaman per satu"
+          >
+            <Grid3x3 className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setViewMode('scroll')}
+            disabled={isLoading || numPages === 0}
+            className={`p-2 rounded transition ${
+              viewMode === 'scroll'
+                ? 'bg-purple-500 text-white'
+                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+            }`}
+            title="Scroll Mode - Lihat semua halaman dengan scroll"
+          >
+            <List className="w-5 h-5" />
           </button>
         </div>
 
@@ -311,10 +549,15 @@ export default function PDFViewer({ fileUrl }: { fileUrl: string }) {
         </button>
       </div>
 
-      {/* Kontainer untuk Canvas Halaman Tunggal */}
+      {/* Kontainer untuk Canvas */}
       <div
-        className="w-full max-w-[90vw] h-[81vh] overflow-auto bg-gray-100 p-4 shadow-2xl rounded-b-lg"
+        className="w-full max-w-[90vw] bg-gray-100 p-4 shadow-2xl rounded-b-lg"
         ref={viewerRef}
+        style={{
+          height: viewMode === 'scroll' ? 'auto' : '81vh',
+          maxHeight: viewMode === 'scroll' ? 'calc(100vh - 200px)' : '81vh',
+          overflowY: 'auto'
+        }}
       >
         {/* Pesan saat gagal memuat dokumen */}
         {numPages === 0 && !isLoading && (
